@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Model weights (large binary files)
+model/npk_model.h5
+model/label_classes.npy
+model/synthetic_data/
+
+# Environment
+.env
+venv/
+.venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp / uploads
+tmp/
+*.tmp

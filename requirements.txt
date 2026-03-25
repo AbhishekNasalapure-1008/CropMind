@@ -1,0 +1,8 @@
+flask==3.0.0
+flask-cors==4.0.0
+tensorflow==2.15.0
+opencv-python==4.9.0.80
+numpy==1.26.4
+Pillow==10.2.0
+scikit-learn==1.4.0
+matplotlib==3.8.0

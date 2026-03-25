@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="CropMind — AI-powered crop nutrient deficiency diagnosis. Upload a leaf image to detect Nitrogen, Phosphorus, and Potassium deficiencies instantly."/>
+  <meta name="theme-color" content="#0A0F0A"/>
+  <title>CropMind — AI Crop Nutrient Diagnosis</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <!-- Preconnect Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     LOADING OVERLAY
+     ═══════════════════════════════════════════════ -->
+<div id="loading-overlay" role="status" aria-live="polite" aria-label="Analyzing leaf image">
+  <div class="loading-leaf-wrap">
+    <img src="/static/assets/leaf-icon.svg" alt="CropMind analyzing" width="80" height="80"/>
+  </div>
+
+  <div class="loading-steps">
+    <div class="loading-step active" id="ls-0">
+      <span class="loading-step-dot" aria-hidden="true"></span>
+      Preprocessing image...
+    </div>
+    <div class="loading-step" id="ls-1">
+      <span class="loading-step-dot" aria-hidden="true"></span>
+      Segmenting leaf...
+    </div>
+    <div class="loading-step" id="ls-2">
+      <span class="loading-step-dot" aria-hidden="true"></span>
+      Running AI model...
+    </div>
+    <div class="loading-step" id="ls-3">
+      <span class="loading-step-dot" aria-hidden="true"></span>
+      Generating insights...
+    </div>
+  </div>
+
+  <div class="loading-progress-bar" role="progressbar" aria-label="Analysis progress" aria-valuemin="0" aria-valuemax="100">
+    <div class="loading-progress-fill" id="loading-progress-fill"></div>
+  </div>
+
+  <div class="loading-dots" aria-hidden="true">
+    <span></span><span></span><span></span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     TOAST CONTAINER
+     ═══════════════════════════════════════════════ -->
+<div id="toast-container" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- ═══════════════════════════════════════════════
+     NAVBAR
+     ═══════════════════════════════════════════════ -->
+<nav id="navbar" role="navigation" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="#hero" class="nav-logo" aria-label="CropMind — go to home">
+      <img src="/static/assets/leaf-icon.svg" alt="CropMind leaf logo" class="logo-icon" width="36" height="36"/>
+      <span class="logo-text">CropMind<span aria-hidden="true">.</span></span>
+    </a>
+
+    <ul class="nav-links" role="list">
+      <li><a href="#hero"          aria-label="Home">Home</a></li>
+      <li><a href="#diagnose"      aria-label="Diagnose section">Diagnose</a></li>
+      <li><a href="#how-it-works"  aria-label="How it works section">How It Works</a></li>
+      <li><a href="#nutrient-guide" aria-label="Nutrient guide section">Guide</a></li>
+      <li><a href="#diagnose" class="nav-cta" aria-label="Start diagnosis">Diagnose Now</a></li>
+    </ul>
+
+    <button class="hamburger" id="hamburger" aria-label="Toggle mobile menu" aria-expanded="false" aria-controls="nav-mobile">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile nav -->
+<nav id="nav-mobile" aria-label="Mobile navigation" role="navigation">
+  <a href="#hero">Home</a>
+  <a href="#diagnose">Diagnose</a>
+  <a href="#how-it-works">How It Works</a>
+  <a href="#nutrient-guide">Nutrient Guide</a>
+  <a href="#diagnose" class="btn btn-primary" style="font-size:1rem;padding:14px 32px;">Diagnose Now</a>
+</nav>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 1: HERO
+     ═══════════════════════════════════════════════ -->
+<section id="hero" aria-label="Hero">
+  <canvas id="hero-canvas" aria-hidden="true"></canvas>
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-tag" aria-label="AI-powered precision agriculture platform">
+        <span class="hero-tag-dot" aria-hidden="true"></span>
+        AI-Powered Precision Agriculture
+      </div>
+
+      <h1 class="hero-title">Diagnose.<br/>Understand.<br/>Grow.</h1>
+
+      <p class="hero-subtitle">
+        Upload a single leaf image and let CropMind's AI instantly detect Nitrogen, Phosphorus, 
+        and Potassium deficiencies — with fertilizer recommendations tailored to your crop and soil.
+      </p>
+
+      <div class="hero-btns">
+        <a href="#diagnose" class="btn btn-primary" aria-label="Go to diagnosis tool">
+          🌿 Diagnose Now
+        </a>
+        <a href="#how-it-works" class="btn btn-ghost" aria-label="Learn how CropMind works">
+          ▶ See How It Works
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-indicator" aria-hidden="true">
+    <span>Scroll</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 2: HOW IT WORKS
+     ═══════════════════════════════════════════════ -->
+<section id="how-it-works" aria-labelledby="hiw-title">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label" aria-hidden="true">System Architecture</div>
+      <h2 id="hiw-title">From Leaf to Insight</h2>
+      <p>A 7-stage intelligent pipeline transforms a single photo into actionable agronomic intelligence.</p>
+    </div>
+
+    <div class="pipeline" role="list" aria-label="7-step analysis pipeline">
+      <div class="pipe-step" role="listitem">
+        <div class="step-icon" aria-hidden="true">📸</div>
+        <div class="step-num">01</div>
+        <div class="step-title">Upload Image</div>
+        <p class="step-desc">Drag, drop or browse your leaf photo</p>
+      </div>
+      <div class="pipe-step" role="listitem">
+        <div class="step-icon" aria-hidden="true">⚙️</div>
+        <div class="step-num">02</div>
+        <div class="step-title">Preprocessing</div>
+        <p class="step-desc">CLAHE equalization, Gaussian noise reduction, normalization</p>
+      </div>
+      <div class="pipe-step" role="listitem">
+        <div class="step-icon" aria-hidden="true">🌿</div>
+        <div class="step-num">03</div>
+        <div class="step-title">Segmentation</div>
+        <p class="step-desc">HSV masking isolates leaf from soil background</p>
+      </div>
+      <div class="pipe-step" role="listitem">
+        <div class="step-icon" aria-hidden="true">🔍</div>
+        <div class="step-num">04</div>
+        <div class="step-title">Disease Filter</div>
+        <p class="step-desc">Distinguishes disease spots from deficiency patterns</p>
+      </div>
+      <div class="pipe-step" role="listitem">
+        <div class="step-icon" aria-hidden="true">🧠</div>
+        <div class="step-num">05</div>
+        <div class="step-title">AI Model</div>
+        <p class="step-desc">MobileNetV2 CNN predicts N, P, K scores simultaneously</p>
+      </div>
+      <div class="pipe-step" role="listitem">
+        <div class="step-icon" aria-hidden="true">🎯</div>
+        <div class="step-num">06</div>
+        <div class="step-title">Context Tuning</div>
+        <p class="step-desc">Adjusts predictions for soil, climate & crop type</p>
+      </div>
+      <div class="pipe-step" role="listitem">
+        <div class="step-icon" aria-hidden="true">💡</div>
+        <div class="step-num">07</div>
+        <div class="step-title">Recommendations</div>
+        <p class="step-desc">Fertilizer plan with rate, method & urgency</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 3: DIAGNOSE (MAIN TOOL)
+     ═══════════════════════════════════════════════ -->
+<section id="diagnose" aria-labelledby="diagnose-title">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label" aria-hidden="true">AI Diagnosis Tool</div>
+      <h2 id="diagnose-title">Analyze Your Crop</h2>
+      <p>Upload a leaf photo, provide agronomic context, and receive an instant AI diagnosis.</p>
+    </div>
+
+    <div class="diagnose-grid">
+      <!-- LEFT: Input Panel -->
+      <div class="input-panel">
+
+        <!-- Upload Zone -->
+        <div class="upload-zone" id="upload-zone" role="button" tabindex="0"
+             aria-label="Drag and drop a leaf image here, or click to browse"
+             aria-describedby="upload-hint">
+          <div id="upload-placeholder">
+            <div class="upload-icon" aria-hidden="true">🍃</div>
+            <h3>Drop your leaf image here</h3>
+            <p id="upload-hint">JPG or PNG, up to 10 MB</p>
+            <button class="upload-browse" id="browse-btn" type="button" 
+                    aria-label="Browse for a leaf image file">Browse Files</button>
+          </div>
+
+          <div class="upload-preview" id="upload-preview">
+            <img src="" alt="" id="preview-img" loading="lazy"/>
+            <div class="preview-overlay" role="button" tabindex="0" aria-label="Change image">
+              <span aria-hidden="true">🔄</span>
+              <span>Change Image</span>
+            </div>
+          </div>
+
+          <div class="upload-progress-wrap" id="upload-progress-wrap" aria-hidden="true">
+            <div class="upload-progress-bar">
+              <div class="upload-progress-fill" id="upload-progress-fill"></div>
+            </div>
+          </div>
+
+          <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp"
+                 style="display:none;" aria-hidden="true" tabindex="-1"/>
+          <button type="button" id="change-image-btn" style="display:none;" aria-label="Change image"></button>
+        </div>
+
+        <!-- Context Form -->
+        <form id="analyze-form" novalidate aria-label="Crop analysis context form">
+          <div class="context-form">
+            <h3>🌾 Agronomic Context</h3>
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="crop-type">Crop Type <span aria-hidden="true" style="color:var(--danger)">*</span></label>
+                <select id="crop-type" name="crop_type" required aria-required="true">
+                  <option value="">Select crop...</option>
+                  <option value="rice">Rice</option>
+                  <option value="wheat">Wheat</option>
+                  <option value="maize">Maize</option>
+                  <option value="sugarcane">Sugarcane</option>
+                  <option value="cotton">Cotton</option>
+                  <option value="tomato">Tomato</option>
+                  <option value="potato">Potato</option>
+                  <option value="soybean">Soybean</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="soil-type">Soil Type <span aria-hidden="true" style="color:var(--danger)">*</span></label>
+                <select id="soil-type" name="soil_type" required aria-required="true">
+                  <option value="">Select soil...</option>
+                  <option value="sandy">Sandy</option>
+                  <option value="clay">Clay</option>
+                  <option value="loamy">Loamy</option>
+                  <option value="silty">Silty</option>
+                  <option value="peaty">Peaty</option>
+                  <option value="chalky">Chalky</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="climate-zone">Climate Zone <span aria-hidden="true" style="color:var(--danger)">*</span></label>
+                <select id="climate-zone" name="climate_zone" required aria-required="true">
+                  <option value="">Select climate...</option>
+                  <option value="tropical">Tropical</option>
+                  <option value="subtropical">Subtropical</option>
+                  <option value="arid">Arid</option>
+                  <option value="semi-arid">Semi-Arid</option>
+                  <option value="temperate">Temperate</option>
+                  <option value="continental">Continental</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="growth-stage">Growth Stage <span aria-hidden="true" style="color:var(--danger)">*</span></label>
+                <select id="growth-stage" name="growth_stage" required aria-required="true">
+                  <option value="">Select stage...</option>
+                  <option value="seedling">Seedling</option>
+                  <option value="vegetative">Vegetative</option>
+                  <option value="flowering">Flowering</option>
+                  <option value="fruiting">Fruiting</option>
+                  <option value="maturity">Maturity</option>
+                </select>
+              </div>
+
+              <div class="form-field full">
+                <label for="notes">Additional Notes <span style="font-weight:400;color:var(--text-muted)">(optional, max 200 chars)</span></label>
+                <textarea id="notes" name="notes" maxlength="200"
+                          placeholder="E.g. leaf yellowing noticed 3 days ago, recent flooding..."
+                          aria-label="Additional context or observations"></textarea>
+              </div>
+            </div>
+
+            <button class="analyze-btn" type="submit" id="analyze-btn"
+                    aria-label="Submit leaf image for AI analysis">
+              <span aria-hidden="true">🔬</span>
+              Analyze Leaf
+            </button>
+          </div>
+        </form>
+
+      </div><!-- /input-panel -->
+
+      <!-- RIGHT: Results Panel -->
+      <div id="results-panel" class="results-panel" role="region" aria-label="Analysis results" aria-live="polite">
+        <div class="results-placeholder">
+          <div class="big-icon" aria-hidden="true">🔬</div>
+          <h3>Awaiting Analysis</h3>
+          <p>Upload a leaf image and fill in the crop context, then click "Analyze Leaf" to get AI-powered nutrient deficiency insights.</p>
+        </div>
+      </div>
+
+    </div><!-- /diagnose-grid -->
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 4: NUTRIENT GUIDE
+     ═══════════════════════════════════════════════ -->
+<section id="nutrient-guide" aria-labelledby="guide-title">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label" aria-hidden="true">Reference Database</div>
+      <h2 id="guide-title">NPK Nutrient Guide</h2>
+      <p>Understanding what each nutrient does and how to identify its deficiency.</p>
+    </div>
+
+    <div class="nutrient-grid">
+
+      <!-- Nitrogen -->
+      <article class="nutrient-card nutrient-n reveal" aria-labelledby="n-title">
+        <div class="nutrient-header">
+          <div class="nutrient-symbol" aria-hidden="true">N</div>
+          <h3 id="n-title">Nitrogen
+            <small>Essential for vegetative growth & chlorophyll</small>
+          </h3>
+        </div>
+
+        <div class="nutrient-section">
+          <div class="nutrient-section-title">Visual Symptoms</div>
+          <ul class="nutrient-list" aria-label="Nitrogen deficiency symptoms">
+            <li>General yellowing (chlorosis) from older leaves</li>
+            <li>Pale green to yellow uniform discoloration</li>
+            <li>Stunted growth and thin, weak stems</li>
+            <li>Reduced tillering in cereals</li>
+          </ul>
+        </div>
+
+        <div class="nutrient-section">
+          <div class="nutrient-section-title">Most Affected Crops</div>
+          <div class="nutrient-tags">
+            <span class="nutrient-tag">Maize</span>
+            <span class="nutrient-tag">Rice</span>
+            <span class="nutrient-tag">Wheat</span>
+            <span class="nutrient-tag">Sugarcane</span>
+            <span class="nutrient-tag">Tomato</span>
+          </div>
+        </div>
+
+        <div class="nutrient-section">
+          <div class="nutrient-section-title">Common Fixes</div>
+          <ul class="nutrient-list">
+            <li>Urea (46-0-0) — soil or foliar</li>
+            <li>Ammonium nitrate for severe cases</li>
+            <li>Green manure / cover crops long-term</li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Phosphorus -->
+      <article class="nutrient-card nutrient-p reveal" aria-labelledby="p-title">
+        <div class="nutrient-header">
+          <div class="nutrient-symbol" aria-hidden="true">P</div>
+          <h3 id="p-title">Phosphorus
+            <small>Critical for roots, flowers & energy transfer</small>
+          </h3>
+        </div>
+
+        <div class="nutrient-section">
+          <div class="nutrient-section-title">Visual Symptoms</div>
+          <ul class="nutrient-list" aria-label="Phosphorus deficiency symptoms">
+            <li>Purple/reddish tint on leaf undersides & stems</li>
+            <li>Dark green, dull appearance of leaves</li>
+            <li>Delayed flowering and maturity</li>
+            <li>Poor root development and water uptake</li>
+          </ul>
+        </div>
+
+        <div class="nutrient-section">
+          <div class="nutrient-section-title">Most Affected Crops</div>
+          <div class="nutrient-tags">
+            <span class="nutrient-tag">Soybean</span>
+            <span class="nutrient-tag">Potato</span>
+            <span class="nutrient-tag">Wheat</span>
+            <span class="nutrient-tag">Cotton</span>
+            <span class="nutrient-tag">Legumes</span>
+          </div>
+        </div>
+
+        <div class="nutrient-section">
+          <div class="nutrient-section-title">Common Fixes</div>
+          <ul class="nutrient-list">
+            <li>DAP (18-46-0) for fast correction</li>
+            <li>TSP (0-46-0) for severe deficiency</li>
+            <li>Maintain pH 6.0–7.0 for availability</li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Potassium -->
+      <article class="nutrient-card nutrient-k reveal" aria-labelledby="k-title">
+        <div class="nutrient-header">
+          <div class="nutrient-symbol" aria-hidden="true">K</div>
+          <h3 id="k-title">Potassium
+            <small>Regulates water, enzymes & stress tolerance</small>
+          </h3>
+        </div>
+
+        <div class="nutrient-section">
+          <div class="nutrient-section-title">Visual Symptoms</div>
+          <ul class="nutrient-list" aria-label="Potassium deficiency symptoms">
+            <li>Marginal leaf scorch (brown, crispy edges)</li>
+            <li>Interveinal chlorosis on older leaves</li>
+            <li>Weak stems prone to lodging</li>
+            <li>Poor fruit quality and reduced sugar content</li>
+          </ul>
+        </div>
+
+        <div class="nutrient-section">
+          <div class="nutrient-section-title">Most Affected Crops</div>
+          <div class="nutrient-tags">
+            <span class="nutrient-tag">Tomato</span>
+            <span class="nutrient-tag">Potato</span>
+            <span class="nutrient-tag">Sugarcane</span>
+            <span class="nutrient-tag">Cotton</span>
+            <span class="nutrient-tag">Banana</span>
+          </div>
+        </div>
+
+        <div class="nutrient-section">
+          <div class="nutrient-section-title">Common Fixes</div>
+          <ul class="nutrient-list">
+            <li>MOP (0-0-60) for general correction</li>
+            <li>SOP (0-0-50) for chloride-sensitive crops</li>
+            <li>Potassium nitrate via fertigation</li>
+          </ul>
+        </div>
+      </article>
+
+    </div><!-- /nutrient-grid -->
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 5: FOOTER
+     ═══════════════════════════════════════════════ -->
+<footer role="contentinfo">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="#hero" class="nav-logo" aria-label="CropMind home">
+          <img src="/static/assets/leaf-icon.svg" alt="" width="28" height="28" aria-hidden="true"/>
+          <span class="logo-text" style="font-size:1.1rem;">CropMind<span aria-hidden="true">.</span></span>
+        </a>
+        <p>AI-powered crop nutrient deficiency diagnosis for modern precision agriculture. From leaf to insight in seconds.</p>
+        <div class="hackathon-badge">
+          🏆 Built for Hackathon 2026
+        </div>
+      </div>
+
+      <div>
+        <div class="footer-nav-title">Navigate</div>
+        <ul class="footer-nav-links" role="list">
+          <li><a href="#hero">Home</a></li>
+          <li><a href="#diagnose">Diagnose</a></li>
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#nutrient-guide">Nutrient Guide</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="footer-nav-title">Tech Stack</div>
+        <div class="tech-stack-pills" aria-label="Technologies used">
+          <span class="tech-pill">Python</span>
+          <span class="tech-pill">Flask</span>
+          <span class="tech-pill">TensorFlow</span>
+          <span class="tech-pill">OpenCV</span>
+          <span class="tech-pill">MobileNetV2</span>
+          <span class="tech-pill">Grad-CAM</span>
+          <span class="tech-pill">Vanilla JS</span>
+          <span class="tech-pill">CSS Grid</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2026 CropMind. Built with 🌿 for farmers worldwide.</p>
+      <p style="font-size:0.78rem;">
+        Powered by <a href="https://tensorflow.org" target="_blank" rel="noopener noreferrer" style="color:var(--accent-green)">TensorFlow</a> &amp; 
+        <a href="https://flask.palletsprojects.com" target="_blank" rel="noopener noreferrer" style="color:var(--accent-green)">Flask</a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════════
+     SCRIPTS
+     ═══════════════════════════════════════════════ -->
+<script src="/static/js/main.js" defer></script>
+<script src="/static/js/results.js" defer></script>
+<script src="/static/js/upload.js" defer></script>
+
+<!-- Keyboard accessibility for upload zone -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const zone = document.getElementById('upload-zone');
+    zone?.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        document.getElementById('file-input')?.click();
+      }
+    });
+    // Char counter for notes
+    const notes = document.getElementById('notes');
+    if (notes) {
+      notes.addEventListener('input', function() {
+        const remaining = 200 - this.value.length;
+        this.title = `${remaining} characters remaining`;
+      });
+    }
+  });
+</script>
+
+</body>
+</html>
