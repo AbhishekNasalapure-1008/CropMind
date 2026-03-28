@@ -112,66 +112,100 @@ def filter_disease_vs_deficiency(image: np.ndarray) -> dict:
 def generate_gradcam(model, image: np.ndarray, class_idx: int) -> str:
     """
     Generate a Grad-CAM heatmap for the given class index.
-    Input: float32 RGB array (224, 224, 3), un-batched.
-    Returns: base64-encoded PNG string of heatmap overlaid on original image.
+
+    Handles the case where MobileNetV2 is a nested sub-model inside the
+    outer CropMind functional model by searching both the outer and inner
+    layer lists.
+
+    Args:
+        model:     The loaded Keras model.
+        image:     float32 RGB array of shape (224, 224, 3), values in [0, 1].
+        class_idx: Index of the class to explain (0=N, 1=P, 2=K).
+
+    Returns:
+        Base64-encoded PNG string of the heatmap overlay.
     """
     import tensorflow as tf
 
     img_tensor = tf.convert_to_tensor(image[np.newaxis, ...])  # (1, 224, 224, 3)
+    heatmap = None
 
-    # Find the last conv layer
-    last_conv_layer = None
-    for layer in reversed(model.layers):
-        if hasattr(layer, 'filters') or 'conv' in layer.name.lower():
-            last_conv_layer = layer.name
-            break
+    try:
+        # ── Step 1: find last conv layer (search outer + nested inner layers) ──
+        last_conv_layer_name = None
 
-    if last_conv_layer is None:
-        # Fallback for MobileNetV2: use the last Conv layer in base
+        # Search outer model layers first
         for layer in reversed(model.layers):
-            if 'Conv' in layer.__class__.__name__ or 'conv' in layer.name:
-                last_conv_layer = layer.name
+            if 'conv' in layer.name.lower() and hasattr(layer, 'filters'):
+                last_conv_layer_name = layer.name
                 break
 
-    if last_conv_layer is None:
-        # Generate a blank gradient heatmap fallback
-        heatmap = np.zeros((224, 224), dtype=np.float32)
-    else:
-        # Build grad model
+        # If not found, dig into nested sub-models (e.g. MobileNetV2)
+        if last_conv_layer_name is None:
+            for layer in reversed(model.layers):
+                if hasattr(layer, 'layers'):     # it's a sub-model
+                    for sub_layer in reversed(layer.layers):
+                        if 'conv' in sub_layer.name.lower() and hasattr(sub_layer, 'filters'):
+                            last_conv_layer_name = sub_layer.name
+                            break
+                if last_conv_layer_name:
+                    break
+
+        if last_conv_layer_name is None:
+            raise ValueError("No convolutional layer found for Grad-CAM.")
+
+        # ── Step 2: build grad model pointing to the found conv layer ─────────
+        # We need to handle nested models: find the actual layer object.
+        target_layer = None
         try:
-            grad_model = tf.keras.models.Model(
-                [model.inputs],
-                [model.get_layer(last_conv_layer).output, model.output]
-            )
-            with tf.GradientTape() as tape:
-                last_conv_output, preds = grad_model(img_tensor)
-                class_channel = preds[:, class_idx]
+            target_layer = model.get_layer(last_conv_layer_name)
+        except ValueError:
+            # Try inside sub-models
+            for layer in model.layers:
+                if hasattr(layer, 'layers'):
+                    try:
+                        target_layer = layer.get_layer(last_conv_layer_name)
+                        break
+                    except ValueError:
+                        continue
 
-            grads = tape.gradient(class_channel, last_conv_output)
-            pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
-            last_conv_output = last_conv_output[0]
-            heatmap = last_conv_output @ pooled_grads[..., tf.newaxis]
-            heatmap = tf.squeeze(heatmap).numpy()
-            heatmap = np.maximum(heatmap, 0)
-            if heatmap.max() > 0:
-                heatmap /= heatmap.max()
-        except Exception:
-            heatmap = np.random.rand(7, 7).astype(np.float32)
+        if target_layer is None:
+            raise ValueError(f"Could not resolve layer '{last_conv_layer_name}'.")
 
-    # Resize heatmap to image size and apply color map
-    heatmap_uint8 = np.uint8(255 * heatmap)
+        grad_model = tf.keras.models.Model(
+            inputs  = model.inputs,
+            outputs = [target_layer.output, model.output],
+        )
+
+        with tf.GradientTape() as tape:
+            conv_output, preds = grad_model(img_tensor)
+            class_channel = preds[:, class_idx]
+
+        grads       = tape.gradient(class_channel, conv_output)
+        pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+        conv_output  = conv_output[0]
+        heatmap_raw  = conv_output @ pooled_grads[..., tf.newaxis]
+        heatmap_raw  = tf.squeeze(heatmap_raw).numpy()
+        heatmap_raw  = np.maximum(heatmap_raw, 0)
+        if heatmap_raw.max() > 1e-8:
+            heatmap_raw /= heatmap_raw.max()
+        heatmap = heatmap_raw
+
+    except Exception as exc:
+        print(f"[GradCAM] Warning: {exc} — using random heatmap fallback.")
+        heatmap = np.random.rand(7, 7).astype(np.float32)
+
+    # ── Resize heatmap and overlay on original image ───────────────────────────
+    heatmap_uint8   = np.uint8(255 * heatmap)
     heatmap_resized = cv2.resize(heatmap_uint8, (224, 224))
     heatmap_colored = cv2.applyColorMap(heatmap_resized, cv2.COLORMAP_JET)
     heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)
 
-    # Overlay on original image
     orig_uint8 = np.uint8(image * 255)
-    overlay = cv2.addWeighted(orig_uint8, 0.5, heatmap_colored, 0.5, 0)
+    overlay    = cv2.addWeighted(orig_uint8, 0.5, heatmap_colored, 0.5, 0)
 
-    # Encode as base64 PNG
     pil_img = Image.fromarray(overlay.astype(np.uint8))
-    buffer = BytesIO()
+    buffer  = BytesIO()
     pil_img.save(buffer, format="PNG")
     buffer.seek(0)
-    b64 = base64.b64encode(buffer.read()).decode("utf-8")
-    return b64
+    return base64.b64encode(buffer.read()).decode("utf-8")

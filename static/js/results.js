@@ -238,20 +238,128 @@ function buildInsightCard(data) {
   `;
 }
 
+/* ── Build Feedback Card ──────────────────────────────────────── */
+function buildFeedbackCard(predictionId, predictedLabel) {
+  const labels = ['nitrogen', 'phosphorus', 'potassium', 'healthy'];
+  const icons  = { nitrogen: '🟡', phosphorus: '🟣', potassium: '🟠', healthy: '🟢' };
+
+  const btnHTML = labels.map(label => {
+    const isCorrect = label === predictedLabel;
+    return `
+      <button
+        class="feedback-btn${isCorrect ? ' feedback-correct' : ''}"
+        data-label="${label}"
+        aria-pressed="false"
+        id="fb-btn-${label}">
+        ${icons[label]} ${label.charAt(0).toUpperCase() + label.slice(1)}
+        ${isCorrect ? '<span class="fb-predicted-tag">AI Prediction</span>' : ''}
+      </button>`;
+  }).join('');
+
+  return `
+    <div class="result-card feedback-card" id="feedback-card" data-prediction-id="${predictionId}" data-predicted-label="${predictedLabel}">
+      <div class="card-title"><span>🧠</span> Help CropMind Learn</div>
+      <p class="feedback-desc">Was this diagnosis correct? Your feedback improves future accuracy.</p>
+      <div class="feedback-btns" role="group" aria-label="Feedback label selection">
+        ${btnHTML}
+      </div>
+      <div class="feedback-submit-row" style="display:none;" id="feedback-submit-row">
+        <button class="feedback-submit-btn" id="feedback-submit-btn">Submit Feedback ↗</button>
+        <span class="feedback-selected-label" id="feedback-selected-label"></span>
+      </div>
+      <div class="feedback-done" id="feedback-done" style="display:none;">
+        ✅ Thank you! Your feedback has been recorded and will improve the model.
+      </div>
+    </div>`;
+}
+
+/* ── Wire feedback card interactions ─────────────────────────── */
+function wireFeedbackCard(panel) {
+  const card = panel.querySelector('#feedback-card');
+  if (!card) return;
+
+  const predictionId  = card.dataset.predictionId  || '';
+  const predictedLabel = card.dataset.predictedLabel || '';
+  let   selectedLabel  = '';
+
+  card.querySelectorAll('.feedback-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      card.querySelectorAll('.feedback-btn').forEach(b => {
+        b.classList.remove('feedback-selected');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      this.classList.add('feedback-selected');
+      this.setAttribute('aria-pressed', 'true');
+      selectedLabel = this.dataset.label;
+
+      const submitRow = document.getElementById('feedback-submit-row');
+      const labelEl   = document.getElementById('feedback-selected-label');
+      if (submitRow) submitRow.style.display = 'flex';
+      if (labelEl)   labelEl.textContent = `Selected: ${selectedLabel}`;
+    });
+  });
+
+  const submitBtn = document.getElementById('feedback-submit-btn');
+  submitBtn?.addEventListener('click', async () => {
+    if (!selectedLabel) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prediction_id:   predictionId,
+          correct_label:   selectedLabel,
+          predicted_label: predictedLabel,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        document.getElementById('feedback-done').style.display = 'block';
+        document.getElementById('feedback-submit-row').style.display = 'none';
+        card.querySelectorAll('.feedback-btn').forEach(b => b.disabled = true);
+
+        const total = json.feedback_stats?.total || 0;
+        const msg   = json.retrain_available
+          ? `Feedback saved (${total} total). You can now retrain the model!`
+          : `Feedback saved (${total} total). Keep going to enable retraining!`;
+        window.showToast(msg, 'success', 5000);
+      } else {
+        window.showToast(json.error || 'Feedback submission failed.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Feedback ↗';
+      }
+    } catch (err) {
+      window.showToast('Network error. Please try again.', 'error');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Feedback ↗';
+    }
+  });
+}
+
 /* ── Main render function (called from upload.js) ─────────────── */
 window.renderResults = function (data, originalSrc) {
   const panel = document.getElementById('results-panel');
   if (!panel) return;
+
+  const predictionId   = data.prediction_id   || '';
+  const predictedLabel = data.primary_deficiency || '';
 
   // Build all cards
   panel.innerHTML =
     buildDeficiencyCard(data) +
     buildHeatmapCard(data, originalSrc) +
     buildFertilizerCard(data) +
-    buildInsightCard(data);
+    buildInsightCard(data) +
+    buildFeedbackCard(predictionId, predictedLabel);
 
   // ── Wire heatmap toggles (must happen after innerHTML is set) ──
   wireHeatmapToggles(panel);
+
+  // ── Wire feedback card ────────────────────────────────────────
+  wireFeedbackCard(panel);
 
   // ── Animate rings ─────────────────────────────────────────────
   const pctMap = { n: data.deficiencies.nitrogen, p: data.deficiencies.phosphorus, k: data.deficiencies.potassium };
@@ -260,7 +368,6 @@ window.renderResults = function (data, originalSrc) {
     const ringEl = panel.querySelector(`.ring-fill.${cls}`);
     const pctEl = panel.querySelector(`#ring-pct-${cls}`);
     if (ringEl) animateRing(ringEl, pct, i * 200 + 300);
-    // Count up animation
     if (pctEl) {
       let count = 0;
       const target = pct;
@@ -281,7 +388,7 @@ window.renderResults = function (data, originalSrc) {
   const conf = Math.round((data.confidence || 0) * 100);
   setTimeout(() => {
     const confFill = document.getElementById('confidence-fill');
-    const confVal = document.getElementById('conf-value');
+    const confVal  = document.getElementById('conf-value');
     if (confFill) confFill.style.width = `${conf}%`;
     if (confVal) {
       let c = 0;

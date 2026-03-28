@@ -2236,3 +2236,126 @@ footer {
     margin: 16px 0;
   }
 }
+
+/* ── SELF-LEARNING FEEDBACK CARD ─────────────────────────────────────────── */
+.feedback-card {
+  border-top: 2px solid rgba(74, 222, 128, 0.18);
+}
+
+.feedback-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+  line-height: 1.6;
+}
+
+.feedback-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.feedback-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-hover);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+}
+
+.feedback-btn:hover {
+  border-color: var(--accent-green);
+  color: var(--text-primary);
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.feedback-btn.feedback-correct {
+  border-color: rgba(74, 222, 128, 0.45);
+  color: var(--accent-green);
+  background: rgba(74, 222, 128, 0.07);
+}
+
+.feedback-btn.feedback-selected {
+  border-color: var(--accent-green);
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--accent-green);
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.2);
+}
+
+.feedback-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.fb-predicted-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--accent-green);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.feedback-submit-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.feedback-submit-btn {
+  padding: 10px 22px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: linear-gradient(135deg, var(--accent-green), var(--accent-lime));
+  color: #0A0F0A;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.feedback-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.45);
+}
+
+.feedback-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.feedback-selected-label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.feedback-done {
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  color: var(--accent-green);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+}

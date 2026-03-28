@@ -1,8 +1,23 @@
+# CropMind — Python Dependencies
+# Install with:  pip install -r requirements.txt
+
+# ── Web Framework ─────────────────────────────────────────────────────────────
 flask==3.0.0
 flask-cors==4.0.0
-tensorflow==2.15.0
+
+# ── Deep Learning ─────────────────────────────────────────────────────────────
+# TF 2.16+ includes Keras 3; 2.15 is the last standalone-keras version.
+# Either works with this codebase. Pin to >=2.13 for RandomBrightness layer.
+tensorflow>=2.13.0
+
+# ── Image Processing ──────────────────────────────────────────────────────────
 opencv-python==4.9.0.80
-numpy==1.26.4
-Pillow==10.2.0
-scikit-learn==1.4.0
-matplotlib==3.8.0
+Pillow>=10.2.0
+
+# ── Numerical Computing ───────────────────────────────────────────────────────
+# numpy <2.0 required for TF compatibility
+numpy>=1.26.4,<2.0.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+scikit-learn>=1.4.0
+matplotlib>=3.8.0
