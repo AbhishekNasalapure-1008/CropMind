@@ -22,31 +22,32 @@ def load_model():
     global _model
 
     if not os.path.exists(MODEL_PATH):
-        print(f"[WARNING] Model file not found at {MODEL_PATH}. Using DEMO mode.")
         return None
 
     try:
         import tensorflow as tf
         _model = tf.keras.models.load_model(MODEL_PATH)
-        print(f"[INFO] Model loaded from {MODEL_PATH}")
         return _model
     except Exception as e:
-        print(f"[ERROR] Failed to load model: {e}")
         return None
 
 
 def _demo_predict(image: np.ndarray) -> dict:
     """
-    Fallback demo predictor — uses real image color analysis to distinguish
-    between Nitrogen (yellowing), Phosphorus (purple tint), and Potassium
-    (edge browning / marginal yellowing) deficiency patterns.
-
-    Leaf mask strictly requires green dominance over BOTH R and B so that
-    neutral/gray backgrounds are excluded from all channel statistics.
+    Fallback demo predictor with lighting normalization.
     """
-    r = image[:, :, 0].astype(np.float64)
-    g = image[:, :, 1].astype(np.float64)
-    b = image[:, :, 2].astype(np.float64)
+    # ── Lighting Normalization (makes logic robust to dark/bright photos) ──
+    # Convert to float and stretch histogram slightly if very dark
+    img = image.copy().astype(np.float64)
+    avg_brightness = np.mean(img)
+    if avg_brightness < 0.25:
+        img = np.clip(img * (0.25 / (avg_brightness + 1e-6)), 0, 1)
+    elif avg_brightness > 0.75:
+        img = np.clip(img * (0.75 / (avg_brightness + 1e-6)), 0, 1)
+
+    r = img[:, :, 0]
+    g = img[:, :, 1]
+    b = img[:, :, 2]
 
     # ── Strict leaf mask: green must dominate both red AND blue ─────────────
     # This excludes gray/beige backgrounds where r≈g≈b (previously inflating P)

@@ -72,9 +72,15 @@ PENDING_DIR = os.path.join(_BASE_DIR, "pending_feedback")
 os.makedirs(PENDING_DIR, exist_ok=True)
 
 # ── Load model once at startup ────────────────────────────────────────────────
-_model    = load_model()
-DEMO_MODE = _model is None
-print(f"[CropMind] Running in {'DEMO' if DEMO_MODE else 'LIVE'} mode.")
+try:
+    _model    = load_model()
+    DEMO_MODE = _model is None
+    print(f"[CropMind] Running in {'DEMO' if DEMO_MODE else 'LIVE'} mode.")
+except Exception as e:
+    print(f"[ERROR] Failed to load model: {e}")
+    _model = None
+    DEMO_MODE = True
+    print(f"[CropMind] Running in DEMO mode due to error.")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -260,17 +266,19 @@ def analyze():
 
     except ValueError as ve:
         return jsonify({"success": False, "error": str(ve)}), 422
-    except Exception:
+    except Exception as e:
+        print(f"[ERROR] Analysis pipeline failed: {e}")
         traceback.print_exc()
         return jsonify({
             "success": False,
             "error":   "An internal server error occurred. Please try again.",
         }), 500
     finally:
-        try:
-            os.unlink(tmp.name)
-        except Exception:
-            pass
+        if 'tmp' in locals() and os.path.exists(tmp.name):
+            try:
+                os.unlink(tmp.name)
+            except Exception as e:
+                print(f"[WARNING] Failed to delete temp file: {e}")
 
 
 # ──────────────────────────────────────────────────────────────────────────────

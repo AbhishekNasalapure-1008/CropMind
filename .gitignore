@@ -12,6 +12,16 @@ build/
 model/npk_model.h5
 model/label_classes.npy
 model/synthetic_data/
+model/checkpoints/
+model/training_history.png
+model/training_log.json
+
+# Dataset and Training data
+dataset/
+dataset.zip
+feedback_data/
+confirmed_learning/
+pending_feedback/
 
 # Environment
 .env
