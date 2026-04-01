@@ -203,10 +203,10 @@ def analyze():
         }), 415
 
     # ── Parse form context ────────────────────────────────────────────────────
-    crop_type    = request.form.get("crop_type",    "other").strip().lower()
-    soil_type    = request.form.get("soil_type",    "loamy").strip().lower()
-    climate_zone = request.form.get("climate_zone", "temperate").strip().lower()
-    growth_stage = request.form.get("growth_stage", "vegetative").strip().lower()
+    crop_type    = (request.form.get("crop_type") or "other").strip().lower()
+    soil_type    = (request.form.get("soil_type") or "loamy").strip().lower()
+    climate_zone = (request.form.get("climate_zone") or "temperate").strip().lower()
+    growth_stage = (request.form.get("growth_stage") or "vegetative").strip().lower()
 
     ext        = "." + file.filename.rsplit(".", 1)[-1].lower()
     prediction_id = str(uuid.uuid4())      # unique ID for feedback traceability
@@ -398,4 +398,4 @@ def retrain_status():
 # ──────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=False, host="0.0.0.0", port=5000)

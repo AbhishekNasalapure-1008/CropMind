@@ -232,11 +232,11 @@
         <!-- Context Form -->
         <form id="analyze-form" novalidate aria-label="Crop analysis context form">
           <div class="context-form">
-            <h3>🌾 Agronomic Context</h3>
+            <h3>🌾 Agronomic Context <span style="font-weight:400;color:var(--text-muted);font-size:0.85rem;">(optional)</span></h3>
             <div class="form-grid">
               <div class="form-field">
-                <label for="crop-type">Crop Type <span aria-hidden="true" style="color:var(--danger)">*</span></label>
-                <select id="crop-type" name="crop_type" required aria-required="true">
+                <label for="crop-type">Crop Type</label>
+                <select id="crop-type" name="crop_type">
                   <option value="">Select crop...</option>
                   <option value="rice">Rice</option>
                   <option value="wheat">Wheat</option>
@@ -251,8 +251,8 @@
               </div>
 
               <div class="form-field">
-                <label for="soil-type">Soil Type <span aria-hidden="true" style="color:var(--danger)">*</span></label>
-                <select id="soil-type" name="soil_type" required aria-required="true">
+                <label for="soil-type">Soil Type</label>
+                <select id="soil-type" name="soil_type">
                   <option value="">Select soil...</option>
                   <option value="sandy">Sandy</option>
                   <option value="clay">Clay</option>
@@ -264,8 +264,8 @@
               </div>
 
               <div class="form-field">
-                <label for="climate-zone">Climate Zone <span aria-hidden="true" style="color:var(--danger)">*</span></label>
-                <select id="climate-zone" name="climate_zone" required aria-required="true">
+                <label for="climate-zone">Climate Zone</label>
+                <select id="climate-zone" name="climate_zone">
                   <option value="">Select climate...</option>
                   <option value="tropical">Tropical</option>
                   <option value="subtropical">Subtropical</option>
@@ -277,8 +277,8 @@
               </div>
 
               <div class="form-field">
-                <label for="growth-stage">Growth Stage <span aria-hidden="true" style="color:var(--danger)">*</span></label>
-                <select id="growth-stage" name="growth_stage" required aria-required="true">
+                <label for="growth-stage">Growth Stage</label>
+                <select id="growth-stage" name="growth_stage">
                   <option value="">Select stage...</option>
                   <option value="seedling">Seedling</option>
                   <option value="vegetative">Vegetative</option>

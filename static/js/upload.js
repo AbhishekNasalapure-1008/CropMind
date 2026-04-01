@@ -170,15 +170,6 @@ function validateForm() {
         uploadZone?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return false;
     }
-    const requiredSelects = ['crop-type', 'soil-type', 'climate-zone', 'growth-stage'];
-    for (const id of requiredSelects) {
-        const el = document.getElementById(id);
-        if (!el?.value) {
-            window.showToast(`Please select a ${id.replace(/-/g, ' ')}.`, 'error');
-            el?.focus();
-            return false;
-        }
-    }
     return true;
 }
 
